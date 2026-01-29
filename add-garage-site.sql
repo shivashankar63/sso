@@ -1,0 +1,54 @@
+-- ============================================
+-- Add Garage Site to Connected Sites
+-- ============================================
+-- Run this in CENTRAL Supabase SQL Editor
+-- Replace placeholders with your actual values
+-- ============================================
+
+-- Ensure columns exist (if not already added)
+ALTER TABLE public.connected_sites 
+ADD COLUMN IF NOT EXISTS supabase_url TEXT,
+ADD COLUMN IF NOT EXISTS supabase_anon_key TEXT,
+ADD COLUMN IF NOT EXISTS supabase_service_key TEXT;
+
+-- Insert Garage site
+INSERT INTO public.connected_sites (
+  name,
+  display_name,
+  url,
+  icon,
+  category,
+  status,
+  protocol,
+  is_active,
+  description,
+  supabase_url,
+  supabase_anon_key,
+  supabase_service_key
+) VALUES (
+  'garage',                    -- Site name (unique identifier)
+  'Garage Management System',  -- Display name
+  'https://garage.example.com', -- Site URL (replace with actual URL)
+  '🔧',                       -- Icon emoji
+  'garage',                   -- Category
+  'active',                   -- Status
+  'oauth',                    -- Protocol
+  true,                       -- Is active
+  'Garage Management System - Connected via SSO Dashboard',
+  'https://your-garage-supabase.supabase.co',  -- Supabase URL (replace!)
+  'your-garage-anon-key-here', -- Supabase Anon Key (replace!)
+  'your-garage-service-key-here' -- Supabase Service Key (replace! optional but recommended)
+)
+ON CONFLICT (name) DO UPDATE SET
+  display_name = EXCLUDED.display_name,
+  url = EXCLUDED.url,
+  icon = EXCLUDED.icon,
+  category = EXCLUDED.category,
+  supabase_url = EXCLUDED.supabase_url,
+  supabase_anon_key = EXCLUDED.supabase_anon_key,
+  supabase_service_key = EXCLUDED.supabase_service_key,
+  updated_at = NOW();
+
+-- ============================================
+-- ✅ Garage Site Added!
+-- ============================================

@@ -1,0 +1,21 @@
+-- ============================================
+-- Example: Sync to HRMS's Existing User Table
+-- ============================================
+-- This shows how to sync to HRMS's existing table structure
+-- Adjust table/column names based on your HRMS schema
+-- ============================================
+
+-- Example: If HRMS uses 'users' table with 'email', 'name', 'password' columns
+-- The sync API will:
+-- 1. Find user by email: SELECT * FROM users WHERE email = 'user@example.com'
+-- 2. If exists: UPDATE users SET name = ..., password = ... WHERE email = ...
+-- 3. If not: INSERT INTO users (email, name, password) VALUES (...)
+
+-- ============================================
+-- To configure this, we need to know:
+-- ============================================
+-- 1. HRMS user table name (e.g., 'users', 'employees', 'staff')
+-- 2. HRMS email column name (e.g., 'email', 'user_email')
+-- 3. HRMS name column name (e.g., 'name', 'full_name', 'employee_name')
+-- 4. HRMS password column name (e.g., 'password', 'password_hash', 'user_password')
+-- ============================================
