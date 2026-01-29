@@ -18,10 +18,17 @@ export async function POST(request: Request) {
     }
 
     // Get central Supabase client
-    const centralSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { error: "Missing Supabase environment variables" },
+        { status: 500 }
+      );
+    }
+
+    const centralSupabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Get user data from central database
     const { data: user, error: userError } = await centralSupabase
@@ -75,10 +82,12 @@ export async function POST(request: Request) {
     );
 
     // Find existing user by email (works with any table structure)
+    const tableName = mapping.tableName as string;
+    const emailColumn = mapping.emailColumn as string;
     const { data: existingUser, error: findError } = await targetSupabase
-      .from(mapping.tableName)
+      .from(tableName)
       .select("*")
-      .eq(mapping.emailColumn, user.email.toLowerCase().trim())
+      .eq(emailColumn, user.email.toLowerCase().trim())
       .maybeSingle();
 
     if (findError && findError.code !== "PGRST116") {
@@ -105,9 +114,9 @@ export async function POST(request: Request) {
     if (existingUser) {
       // Update existing user
       const { data, error } = await targetSupabase
-        .from(mapping.tableName)
+        .from(tableName)
         .update(userData)
-        .eq(mapping.emailColumn, user.email.toLowerCase().trim())
+        .eq(emailColumn, user.email.toLowerCase().trim())
         .select()
         .single();
 
@@ -120,7 +129,7 @@ export async function POST(request: Request) {
     } else {
       // Create new user
       const { data, error } = await targetSupabase
-        .from(mapping.tableName)
+        .from(tableName)
         .insert(userData)
         .select()
         .single();

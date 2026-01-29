@@ -40,32 +40,33 @@ export function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserModalProps
     if (isOpen && typeof window !== "undefined") {
       loadSites();
       // Auto-select all configured sites
-      try {
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          supabase
-            .from("connected_sites")
-            .select("id, name, display_name, category, supabase_url, supabase_anon_key")
-            .eq("is_active", true)
-            .then(({ data, error }) => {
-              if (error) {
-                console.error("Error loading sites for auto-select:", error);
-                return;
-              }
-              if (data) {
-                const configuredSites = data
-                  .filter((s) => s.supabase_url && s.supabase_anon_key)
-                  .map((s) => s.id);
-                setSelectedSites(configuredSites);
-              }
-            })
-            .catch((error) => {
-              console.error("Error in auto-select sites:", error);
-            });
+      const autoSelectSites = async () => {
+        try {
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const { data, error } = await supabase
+              .from("connected_sites")
+              .select("id, name, display_name, category, supabase_url, supabase_anon_key")
+              .eq("is_active", true);
+            
+            if (error) {
+              console.error("Error loading sites for auto-select:", error);
+              return;
+            }
+            
+            if (data) {
+              const configuredSites = data
+                .filter((s) => s.supabase_url && s.supabase_anon_key)
+                .map((s) => s.id);
+              setSelectedSites(configuredSites);
+            }
+          }
+        } catch (error) {
+          console.error("Error in auto-select sites:", error);
         }
-      } catch (error) {
-        console.error("Error initializing Supabase client:", error);
-      }
+      };
+      
+      autoSelectSites();
     }
   }, [isOpen]);
 
