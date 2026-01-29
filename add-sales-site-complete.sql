@@ -35,9 +35,9 @@ INSERT INTO public.connected_sites (
   'oauth',                   -- Protocol
   true,                      -- Is active
   'Sales Management Portal - Connected via SSO Dashboard',
-  'https://uvqlonqtlqypxqatgbih.supabase.co',  -- Supabase URL
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cWxvbnF0bHF5cHhxYXRnYmloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2OTUwNjYsImV4cCI6MjA4MzI3MTA2Nn0.nr4eX7XcKlUaJ5Sg3OJDCj0MLpBae6hxfYjRcddYLQM', -- Supabase Anon Key
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cWxvbnF0bHF5cHhxYXRnYmloIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzY5NTA2NiwiZXhwIjoyMDgzMjcxMDY2fQ.dbW-b0MdbZKrSEp6YdWNdBnz-xMHw132WO3qJKOXpWo' -- Supabase Service Key
+  'https://your-sales-project.supabase.co',  -- Supabase URL (REPLACE WITH YOUR SALES SUPABASE URL)
+  'your-supabase-anon-key-here', -- Supabase Anon Key (REPLACE WITH YOUR SALES SUPABASE ANON KEY)
+  'your-supabase-service-key-here' -- Supabase Service Key (REPLACE WITH YOUR SALES SUPABASE SERVICE KEY)
 )
 ON CONFLICT (name) DO UPDATE SET
   display_name = EXCLUDED.display_name,
