@@ -2,6 +2,16 @@
 
 A modern Single Sign-On (SSO) dashboard built with Next.js, Clerk, and Supabase. This application serves as a centralized identity hub that manages authentication across multiple applications (HRMS, CMS, Sales Portal, Garage).
 
+## 🚀 Quick Deploy to Vercel
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instructions.
+
+**Quick steps:**
+1. Push code to GitHub
+2. Import project in Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy!
+
 ## Architecture
 
 This project implements a **corporate SSO architecture** where:

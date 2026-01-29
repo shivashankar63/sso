@@ -26,10 +26,18 @@ export async function POST(request: Request) {
     }
 
     // Get central Supabase client
-    const centralSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("❌ Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY" },
+        { status: 500 }
+      );
+    }
+
+    const centralSupabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Get user data from central database
     console.log(`📋 Fetching user from central database: ${userId}`);
