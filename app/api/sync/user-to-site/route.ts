@@ -112,6 +112,8 @@ export async function POST(request: Request) {
       syncResult = await syncToHRMS(targetSupabase, user, usingServiceKey);
     } else if (siteType === 'sales') {
       syncResult = await syncToSales(targetSupabase, user, usingServiceKey);
+    } else if (siteType === 'cms') {
+      syncResult = await syncToCMS(targetSupabase, user, usingServiceKey);
     } else {
       syncResult = await syncToGeneric(targetSupabase, user, usingServiceKey);
     }
@@ -142,7 +144,7 @@ export async function POST(request: Request) {
 /**
  * Detect site type based on name or category
  */
-function detectSiteType(siteName: string, category: string | null): 'hrms' | 'sales' | 'generic' {
+function detectSiteType(siteName: string, category: string | null): 'hrms' | 'sales' | 'cms' | 'garage' | 'generic' {
   const name = siteName.toLowerCase();
   const cat = (category || '').toLowerCase();
   
@@ -151,6 +153,12 @@ function detectSiteType(siteName: string, category: string | null): 'hrms' | 'sa
   }
   if (name.includes('sales') || cat === 'sales') {
     return 'sales';
+  }
+  if (name.includes('cms') || cat === 'cms') {
+    return 'cms';
+  }
+  if (name.includes('garage') || cat === 'garage') {
+    return 'garage';
   }
   return 'generic';
 }
@@ -379,6 +387,124 @@ async function syncToSales(
   } catch (error: any) {
     console.error(`❌ Sales sync error:`, error);
     return { success: false, error: error.message || "Sales sync failed" };
+  }
+}
+
+/**
+ * Sync to CMS: hr_users, auth.users
+ * Role mapping: admin → admin, manager/user → hr
+ */
+async function syncToCMS(
+  targetSupabase: any,
+  user: any,
+  usingServiceKey: boolean
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  console.log(`📋 Syncing to CMS schema...`);
+
+  try {
+    // Map role: admin → admin, manager/user → hr
+    let cmsRole = user.role || 'user';
+    if (cmsRole.toLowerCase() === 'admin' || cmsRole.toLowerCase() === 'administrator') {
+      cmsRole = 'admin';
+    } else if (cmsRole.toLowerCase() === 'manager' || cmsRole.toLowerCase() === 'user') {
+      cmsRole = 'hr';
+    }
+
+    // Step 1: Create/update auth.users entry
+    let authUserId: string | null = null;
+    
+    if (usingServiceKey && (user as any).password_hash) {
+      console.log(`🔐 Creating/updating auth.users entry...`);
+      
+      const { data: existingAuthUsers } = await targetSupabase.auth.admin.listUsers();
+      const foundUser = existingAuthUsers?.users?.find(
+        (u: any) => u.email?.toLowerCase() === user.email.toLowerCase()
+      );
+      
+      if (foundUser) {
+        authUserId = foundUser.id;
+        await targetSupabase.auth.admin.updateUserById(foundUser.id, {
+          password: (user as any).password_hash,
+          user_metadata: {
+            full_name: user.full_name,
+            role: cmsRole,
+          },
+        });
+        console.log(`   ✅ Auth user updated: ${authUserId}`);
+      } else {
+        const crypto = await import('crypto');
+        authUserId = crypto.randomUUID();
+        
+        await targetSupabase.auth.admin.createUser({
+          id: authUserId,
+          email: user.email,
+          password: (user as any).password_hash,
+          email_confirm: true,
+          user_metadata: {
+            full_name: user.full_name,
+            role: cmsRole,
+          },
+        });
+        console.log(`   ✅ Auth user created: ${authUserId}`);
+      }
+    }
+
+    // Step 2: Sync to hr_users table (CMS specific)
+    if (authUserId) {
+      console.log(`📋 Syncing to hr_users table...`);
+      const hrUserData = {
+        id: authUserId, // Use auth.users.id (UUID)
+        email: user.email,
+        full_name: user.full_name || null,
+        role: cmsRole,
+        department: user.department || null,
+        phone: user.phone || null,
+      };
+
+      const { error: hrError } = await targetSupabase
+        .from("hr_users")
+        .upsert(hrUserData, { onConflict: 'id' });
+
+      if (hrError) {
+        console.warn(`⚠️ Could not sync to hr_users table:`, hrError.message);
+        // Continue - hr_users might not exist or have different structure
+      } else {
+        console.log(`   ✅ HR user record synced`);
+      }
+    }
+
+    // Step 3: Also sync to user_profiles (fallback)
+    console.log(`👤 Syncing to user_profiles table...`);
+    const profileData = {
+      id: user.id, // TEXT ID from central dashboard
+      clerk_user_id: user.clerk_user_id || `clerk_${user.id}`,
+      email: user.email,
+      full_name: user.full_name,
+      role: cmsRole,
+      department: user.department || null,
+      team: user.team || null,
+      phone: user.phone || null,
+      password_hash: (user as any).password_hash || null,
+    };
+
+    const { error: profileError } = await targetSupabase
+      .from("user_profiles")
+      .upsert(profileData, { onConflict: 'id' });
+
+    if (profileError) {
+      console.warn(`⚠️ Could not sync to user_profiles:`, profileError.message);
+      // Continue - user_profiles might not exist
+    } else {
+      console.log(`   ✅ User profile synced`);
+    }
+
+    return {
+      success: true,
+      message: `User synced to CMS (hr_users, user_profiles, auth.users) with role: ${cmsRole}`,
+    };
+  } catch (error: any) {
+    console.error(`❌ CMS sync error:`, error);
+    return { success: false, error: error.message || "CMS sync failed" };
   }
 }
 

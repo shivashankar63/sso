@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, ExternalLink, Settings, Trash2, CheckCircle, XCircle, Clock, Database } from "lucide-react";
+import { Plus, ExternalLink, Settings, Trash2, CheckCircle, XCircle, Clock, Database, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/lib/supabase-client-simple";
 import { SiteSupabaseConfig } from "./SiteSupabaseConfig";
+import { SiteUsersModal } from "./SiteUsersModal";
 
 interface ConnectedSite {
   id: string;
@@ -29,6 +30,7 @@ export function ConnectedSitesManager() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [configuringSite, setConfiguringSite] = useState<string | null>(null);
+  const [viewingUsersSite, setViewingUsersSite] = useState<ConnectedSite | null>(null);
   const [newSite, setNewSite] = useState({
     name: "",
     display_name: "",
@@ -266,7 +268,9 @@ export function ConnectedSitesManager() {
           {sites.map((site) => (
             <div
               key={site.id}
-              className="border border-border rounded-lg p-4 bg-card hover:shadow-md transition-shadow"
+              className="border border-border rounded-lg p-4 bg-card hover:shadow-md hover:border-primary/50 transition-all cursor-pointer"
+              onClick={() => setViewingUsersSite(site)}
+              title="Click to view users for this site"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -304,10 +308,11 @@ export function ConnectedSitesManager() {
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-border">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Users className="h-3 w-3" />
                   {site.total_users} users
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -379,6 +384,14 @@ export function ConnectedSitesManager() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Site Users Modal */}
+      {viewingUsersSite && (
+        <SiteUsersModal
+          site={viewingUsersSite}
+          onClose={() => setViewingUsersSite(null)}
+        />
       )}
     </div>
   );
