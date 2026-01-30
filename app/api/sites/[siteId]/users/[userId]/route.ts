@@ -299,6 +299,15 @@ export async function PATCH(
       );
     }
 
+    // Update user count for the site
+    try {
+      const updateCountUrl = new URL(`/api/sites/${siteId}/update-count`, request.url);
+      await fetch(updateCountUrl.toString(), { method: 'POST' });
+    } catch (countError) {
+      console.warn("Failed to update user count:", countError);
+      // Don't fail the request if count update fails
+    }
+
     return NextResponse.json({
       success: true,
       message: "User updated successfully",
@@ -429,6 +438,15 @@ export async function DELETE(
         // Ignore auth deletion errors - user might not exist in auth.users
         console.log("Note: Could not delete from auth.users (might not exist):", authError.message);
       }
+    }
+
+    // Update user count for the site
+    try {
+      const updateCountUrl = new URL(`/api/sites/${siteId}/update-count`, request.url);
+      await fetch(updateCountUrl.toString(), { method: 'POST' });
+    } catch (countError) {
+      console.warn("Failed to update user count:", countError);
+      // Don't fail the request if count update fails
     }
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, ExternalLink, Trash2, CheckCircle, XCircle, Clock, Database, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/lib/supabase-client-simple";
@@ -31,6 +31,16 @@ export function ConnectedSitesManager() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [configuringSite, setConfiguringSite] = useState<string | null>(null);
   const [viewingUsersSite, setViewingUsersSite] = useState<ConnectedSite | null>(null);
+
+  // Handler for opening users modal - memoized for production builds
+  const handleCardClick = useCallback((site: ConnectedSite, event?: React.MouseEvent) => {
+    if (event) {
+      // Prevent any default behavior
+      event.preventDefault();
+    }
+    console.log('Card clicked for site:', site.name);
+    setViewingUsersSite(site);
+  }, []);
   const [newSite, setNewSite] = useState({
     name: "",
     display_name: "",
@@ -67,6 +77,40 @@ export function ConnectedSitesManager() {
       
       console.log("Loaded sites:", data); // Debug log
       setSites(data || []);
+      
+      // Update counts for sites that have Supabase credentials but count is 0 or null
+      // This helps initialize counts for existing sites
+      if (data && data.length > 0) {
+        const sitesNeedingUpdate = data.filter(
+          site => site.supabase_url && 
+                  site.supabase_anon_key && 
+                  (!site.total_users || site.total_users === 0)
+        );
+        
+        if (sitesNeedingUpdate.length > 0) {
+          console.log(`Updating counts for ${sitesNeedingUpdate.length} site(s)...`);
+          const updatePromises = sitesNeedingUpdate.map(site => 
+            fetch(`/api/sites/${site.id}/update-count`, { method: 'POST' })
+              .then(res => res.json())
+              .then(result => {
+                console.log(`Updated count for ${site.name}: ${result.total_users || 0}`);
+                return result;
+              })
+              .catch(err => {
+                console.warn(`Failed to update count for site ${site.name}:`, err);
+                return null;
+              })
+          );
+          
+          // Update counts in background and reload after a short delay
+          Promise.all(updatePromises).then(() => {
+            // Only reload if we actually updated some counts
+            setTimeout(() => {
+              loadSites();
+            }, 1500);
+          });
+        }
+      }
     } catch (error) {
       console.error("Error loading sites:", error);
       // Show error to user
@@ -268,8 +312,17 @@ export function ConnectedSitesManager() {
           {sites.map((site) => (
             <div
               key={site.id}
-              className="border border-border rounded-lg p-4 bg-card hover:shadow-md hover:border-primary/50 transition-all cursor-pointer"
-              onClick={() => setViewingUsersSite(site)}
+              className="border border-border rounded-lg p-4 bg-card hover:shadow-md hover:border-primary/50 transition-all cursor-pointer select-none"
+              onClick={(e) => {
+                // Only trigger if clicking directly on the card or non-interactive elements
+                const target = e.target as HTMLElement;
+                if (target.closest('a') || target.closest('button')) {
+                  return; // Don't trigger card click for links/buttons
+                }
+                handleCardClick(site, e);
+              }}
+              data-site-id={site.id}
+              data-site-name={site.name}
               title="Click to view users for this site"
             >
               <div className="flex items-start justify-between mb-3">
@@ -291,6 +344,7 @@ export function ConnectedSitesManager() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-primary truncate"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {site.url}
                   </a>
@@ -382,7 +436,11 @@ export function ConnectedSitesManager() {
       {viewingUsersSite && (
         <SiteUsersModal
           site={viewingUsersSite}
-          onClose={() => setViewingUsersSite(null)}
+          onClose={() => {
+            setViewingUsersSite(null);
+            // Refresh sites to update user counts
+            loadSites();
+          }}
         />
       )}
     </div>

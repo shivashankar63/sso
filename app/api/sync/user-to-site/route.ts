@@ -125,6 +125,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Update user count for the site
+    try {
+      const updateCountUrl = new URL(`/api/sites/${siteId}/update-count`, request.url);
+      await fetch(updateCountUrl.toString(), { method: 'POST' });
+    } catch (countError) {
+      console.warn("Failed to update user count:", countError);
+      // Don't fail the request if count update fails
+    }
+
     return NextResponse.json({
       success: true,
       message: syncResult.message || `User synced to ${site.name} successfully`,

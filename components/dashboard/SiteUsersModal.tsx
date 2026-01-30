@@ -46,6 +46,15 @@ export function SiteUsersModal({ site, onClose }: SiteUsersModalProps) {
   useEffect(() => {
     if (site) {
       loadSiteUsers();
+      // Update user count when modal opens
+      const updateCount = async () => {
+        try {
+          await fetch(`/api/sites/${site.id}/update-count`, { method: 'POST' });
+        } catch (error) {
+          console.warn("Failed to update user count:", error);
+        }
+      };
+      updateCount();
     }
   }, [site]);
 
@@ -140,6 +149,13 @@ export function SiteUsersModal({ site, onClose }: SiteUsersModalProps) {
       // Remove user from local state
       setUsers(users.filter((u) => u.id !== userId));
       alert("User deleted successfully");
+      
+      // Update user count for the site
+      try {
+        await fetch(`/api/sites/${site.id}/update-count`, { method: 'POST' });
+      } catch (error) {
+        console.warn("Failed to update user count:", error);
+      }
     } catch (err: any) {
       console.error("Error deleting user:", err);
       alert(`Failed to delete user: ${err.message}`);
@@ -148,10 +164,16 @@ export function SiteUsersModal({ site, onClose }: SiteUsersModalProps) {
     }
   };
 
-  const handleUserUpdated = () => {
+  const handleUserUpdated = async () => {
     // Reload users after update
-    loadSiteUsers();
+    await loadSiteUsers();
     setEditingUser(null);
+    // Update user count for the site
+    try {
+      await fetch(`/api/sites/${site.id}/update-count`, { method: 'POST' });
+    } catch (error) {
+      console.warn("Failed to update user count:", error);
+    }
   };
 
   return (
