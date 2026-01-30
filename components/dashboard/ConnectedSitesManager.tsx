@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, ExternalLink, Settings, Trash2, CheckCircle, XCircle, Clock, Database, Users } from "lucide-react";
+import { Plus, ExternalLink, Trash2, CheckCircle, XCircle, Clock, Database, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/lib/supabase-client-simple";
 import { SiteSupabaseConfig } from "./SiteSupabaseConfig";
@@ -330,14 +330,6 @@ export function ConnectedSitesManager() {
                     title="Remove site"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    title="Settings"
-                  >
-                    <Settings className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

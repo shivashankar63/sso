@@ -294,7 +294,7 @@ export async function GET(
       users: formattedUsers,
       count: formattedUsers.length,
       tables_queried: tablesToQuery,
-      tables_found: [...new Set(formattedUsers.map(u => u.source_table).filter(Boolean))],
+      tables_found: Array.from(new Set(formattedUsers.map(u => u.source_table).filter(Boolean))),
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: any) {
