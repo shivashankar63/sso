@@ -71,9 +71,24 @@ export function SiteSupabaseConfig({ site, onUpdate }: SiteSupabaseConfigProps) 
       const siteCategory = site.category || site.name?.toLowerCase() || "";
       const isSales = siteCategory === "sales" || site.name?.toLowerCase() === "sales";
       const isHRMS = siteCategory === "hrms" || site.name?.toLowerCase() === "hrms";
+      const isCMS = siteCategory === "cms" || site.name?.toLowerCase() === "cms";
       
-      const tableName = isSales ? "users" : "user_profiles";
-      const schemaFile = isSales ? "sales-supabase-schema.sql" : "site-supabase-schema.sql";
+      let tableName: string;
+      let schemaFile: string;
+      
+      if (isSales) {
+        tableName = "users";
+        schemaFile = "sales-supabase-schema.sql";
+      } else if (isCMS) {
+        tableName = "hr_users"; // CMS uses hr_users table
+        schemaFile = "cms-hr-users-schema.sql";
+      } else if (isHRMS) {
+        tableName = "employees";
+        schemaFile = "site-supabase-schema.sql";
+      } else {
+        tableName = "user_profiles";
+        schemaFile = "site-supabase-schema.sql";
+      }
       
       // Try to query the table - this will fail if table doesn't exist OR if RLS blocks it
       const { data, error, count } = await testClient
@@ -105,8 +120,25 @@ export function SiteSupabaseConfig({ site, onUpdate }: SiteSupabaseConfigProps) 
       const errorMsg = error.message || "Unknown error";
       const siteCategory = site.category || site.name?.toLowerCase() || "";
       const isSales = siteCategory === "sales" || site.name?.toLowerCase() === "sales";
-      const tableName = isSales ? "users" : "user_profiles";
-      const schemaFile = isSales ? "sales-supabase-schema.sql" : "site-supabase-schema.sql";
+      const isCMS = siteCategory === "cms" || site.name?.toLowerCase() === "cms";
+      const isHRMS = siteCategory === "hrms" || site.name?.toLowerCase() === "hrms";
+      
+      let tableName: string;
+      let schemaFile: string;
+      
+      if (isSales) {
+        tableName = "users";
+        schemaFile = "sales-supabase-schema.sql";
+      } else if (isCMS) {
+        tableName = "hr_users";
+        schemaFile = "cms-hr-users-schema.sql";
+      } else if (isHRMS) {
+        tableName = "employees";
+        schemaFile = "site-supabase-schema.sql";
+      } else {
+        tableName = "user_profiles";
+        schemaFile = "site-supabase-schema.sql";
+      }
       
       if (errorMsg.includes("does not exist") || errorMsg.includes("relation") || errorMsg.includes("schema cache")) {
         const siteName = site.display_name || site.name || "this site";
